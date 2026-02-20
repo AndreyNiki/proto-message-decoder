@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"flag"
-	"fmt"
 	log "log/slog"
 	"os"
 
@@ -25,14 +24,15 @@ func main() {
 
 	decodedBytes, err := base64.StdEncoding.DecodeString(*base64string)
 	if err != nil {
-		fmt.Println("decode error:", err)
-		return
+		log.Error("decode base63", "err", *messageName)
+		os.Exit(1)
 	}
 
 	parser := &protoparse.Parser{}
 	fds, err := parser.ParseFiles(*protoFilePath)
 	if err != nil {
-		log.Error("Error parse proto file", "err", err)
+		log.Error("parse proto file", "err", err)
+		os.Exit(1)
 	}
 
 	fd := fds[0]
@@ -40,17 +40,20 @@ func main() {
 	msgFromProto := fd.FindMessage(msgName)
 	if msgFromProto == nil {
 		log.Error("Message not found", "msgName", *messageName)
+		os.Exit(1)
 	}
 	msg := dynamic.NewMessage(msgFromProto)
 
 	err = msg.Unmarshal(decodedBytes)
 	if err != nil {
-		log.Error("Error decode proto message", "err", err)
+		log.Error("ecode proto message", "err", err)
+		os.Exit(1)
 	}
 
 	j, err := msg.MarshalJSONIndent()
 	if err != nil {
 		log.Error("Error marshal to json", "err", err)
+		os.Exit(1)
 	}
 
 	log.Info(string(j))
